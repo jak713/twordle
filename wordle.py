@@ -23,17 +23,25 @@ def is_matching(wordle, guess)-> dict:
         'yellow': [],
         'dark': [],
     }
-    letters_used = {} # to avoid double counting but also to allow for mulitple letters when appropriate
 
+    wordle_used = [False] * len(wordle)
     for idx,letter in enumerate(guess):
         if letter == wordle[idx]:
             matched['green'].append(idx)
-            letters_used[letter] = letters_used.get(letter, 0) + 1
-        elif letter in wordle:
-            if letters_used.get(letter, 0) < wordle.count(letter):
+            wordle_used[idx] = True
+    
+    for idx, letter in enumerate(guess):
+        if idx in matched['green']:
+            continue
+
+        found = False
+        for w_idx, w_letter in enumerate(wordle):
+            if w_letter == letter and not wordle_used[w_idx]:
                 matched['yellow'].append(idx)
-                letters_used[letter] = letters_used.get(letter, 0) + 1
-        else:
+                wordle_used[w_idx] = True
+                found = True
+                break
+        if not found:
             matched['dark'].append(idx)
     return matched
 
