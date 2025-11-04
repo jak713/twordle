@@ -101,7 +101,7 @@ def main(stdscr):
     stdscr.addstr(3,25,"Welcome to Twordle (Terminal Wordle 2)", GREY | curses.A_UNDERLINE)
     stdscr.refresh()
 
-    wordle = get_wordle(wordle_path)
+    wordle = 'fools' #get_wordle(wordle_path)
 
     for j in range(6):
         for i in range(5):
@@ -115,7 +115,8 @@ def main(stdscr):
     row = 0
     is_bad_word = False
     is_short_word = False
-    while row < 6:
+    won = False
+    while row < 6 or not won:
         guess = ""
         column = 0
         
@@ -152,6 +153,7 @@ def main(stdscr):
         if is_correct(wordle,guess):
             for idx, letter in enumerate(guess):
                 make_wins(GREEN, row, idx, letter)
+                won = True
             break
 
         if len(guess) == 5:
