@@ -11,7 +11,7 @@ with open(valid_path, 'r') as f:
 
 def get_wordle(wordle_path) -> str:
     with open(wordle_path, 'r') as file:
-        lines = [l for l in file]
+        lines = [l.strip() for l in file]
     return random.choice(lines)
 
 def is_valid(word, valid_list) -> bool:
@@ -23,16 +23,16 @@ def is_matching(wordle, guess)-> dict:
         'yellow': [],
         'grey': [],
     }
-    letters_used = []
+    letters_used = {} # to avoid double counting but also to allow for mulitple letters when appropriate
 
     for idx,letter in enumerate(guess):
         if letter == wordle[idx]:
             matched['green'].append(idx)
-            letters_used.append(letter)
+            letters_used[letter] = letters_used.get(letter, 0) + 1
         elif letter in wordle:
-            if not letter in letters_used:
-                    matched['yellow'].append(idx)
-                    letters_used.append(letter)
+            if letters_used.get(letter, 0) < wordle.count(letter):
+                matched['yellow'].append(idx)
+                letters_used[letter] = letters_used.get(letter, 0) + 1
         else:
             matched['grey'].append(idx)
     return matched
@@ -115,8 +115,9 @@ def main(stdscr):
     row = 0
     is_bad_word = False
     is_short_word = False
-    won = False
-    while row < 6 or not won:
+
+    while row < 6:
+        
         guess = ""
         column = 0
         
@@ -149,11 +150,10 @@ def main(stdscr):
                 guess+=str(letter).lower()
                 make_wins(DARK, row, column, letter.upper())
                 column+=1
-            
+
         if is_correct(wordle,guess):
             for idx, letter in enumerate(guess):
                 make_wins(GREEN, row, idx, letter)
-                won = True
             break
 
         if len(guess) == 5:
