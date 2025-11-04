@@ -101,7 +101,7 @@ def main(stdscr):
     stdscr.addstr(3,25,"Welcome to Twordle (Terminal Wordle 2)", GREY | curses.A_UNDERLINE)
     stdscr.refresh()
 
-    wordle = 'mourn'#get_wordle(wordle_path)
+    wordle = get_wordle(wordle_path)
 
     for j in range(6):
         for i in range(5):
