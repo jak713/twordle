@@ -3,6 +3,7 @@ import curses
 from curses import wrapper
 import time
 
+keyboard = ['qwertyuiop','asdfghjkl','zxcvbnm']
 wordle_path = 'words.txt'
 valid_path = 'valid.txt'
 with open(valid_path, 'r') as f:
@@ -22,12 +23,16 @@ def is_matching(wordle, guess)-> dict:
         'yellow': [],
         'grey': [],
     }
+    letters_used = []
+
     for idx,letter in enumerate(guess):
         if letter == wordle[idx]:
             matched['green'].append(idx)
+            letters_used.append(letter)
         elif letter in wordle:
-            if guess.count(letter) <= wordle.count(letter):
+            if not letter in letters_used:
                     matched['yellow'].append(idx)
+                    letters_used.append(letter)
         else:
             matched['grey'].append(idx)
     return matched
@@ -43,11 +48,47 @@ def make_wins(color, row, column, letter):
     win.refresh()
     time.sleep(0.1)
 
+def make_keyboard(color):
+    tile_h, tile_w = 3, 3
+    y = 24
+    x = 27
+
+    offset = 0
+    for row in range(len(keyboard)):
+            for num in range(len(keyboard[row])):
+                win = curses.newwin(tile_h, tile_w, y+row*2, x+num*3+offset)
+                win.addstr(1,1, keyboard[row][num].upper())
+                win.attrset(color)
+                win.border()
+                win.refresh()
+            offset += 2
+
+def assign_colors_to_keyboard(guess, colors, GREEN, YELLOW, GREY):
+    for idx, letter in enumerate(guess):
+        if idx in colors['green']:
+            color = GREEN
+        elif idx in colors['yellow']:
+            color = YELLOW
+        else:
+            color = GREY
+
+        for row in range(len(keyboard)):
+            if letter in keyboard[row]:
+                col = keyboard[row].index(letter)
+                offset = row * 2
+                break
+
+        win = curses.newwin(3, 3, 24+row*2, 27+col*3+offset)
+        win.addstr(1,1, letter.upper(), color)
+        win.attrset(color)
+        win.border()
+        win.refresh()
+
 def main(stdscr):
 
     curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
     curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)
-    curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLACK)
+    curses.init_pair(3, 255, curses.COLOR_BLACK)
     curses.init_pair(4,243,curses.COLOR_BLACK)
 
     GREEN = curses.color_pair(1)
@@ -60,7 +101,7 @@ def main(stdscr):
     stdscr.addstr(3,25,"Welcome to Twordle (Terminal Wordle 2)", GREY | curses.A_UNDERLINE)
     stdscr.refresh()
 
-    wordle = get_wordle(wordle_path)
+    wordle = 'mourn'#get_wordle(wordle_path)
 
     for j in range(6):
         for i in range(5):
@@ -68,6 +109,8 @@ def main(stdscr):
             win.attrset(DARK)
             win.border()
             win.refresh()
+
+    make_keyboard(DARK)
 
     row = 0
     is_bad_word = False
@@ -106,27 +149,25 @@ def main(stdscr):
                 make_wins(DARK, row, column, letter.upper())
                 column+=1
             
+        if is_correct(wordle,guess):
+            for idx, letter in enumerate(guess):
+                make_wins(GREEN, row, idx, letter)
+            break
 
         if len(guess) == 5:
             stdscr.addstr(0,0," "*60)
-            stdscr.addstr(0,0,guess + ": " + str(is_valid(guess, valid_list)), GREY | curses.A_UNDERLINE)
+            stdscr.addstr(0,0,guess + " is a valid word: " + str(is_valid(guess, valid_list)), GREY | curses.A_UNDERLINE)
             if is_valid(guess,valid_list):
-
-                if is_correct(wordle,guess):
-                    for idx, letter in enumerate(guess):
+                colors = is_matching(wordle, guess)
+                for idx, letter in enumerate(guess):
+                    if idx in colors['green']:
                         make_wins(GREEN, row, idx, letter)
-                    break
-
-                else:
-                    colors = is_matching(wordle, guess)
-                    for idx, letter in enumerate(guess):
-                        if idx in colors['green']:
-                            make_wins(GREEN, row, idx, letter)
-                        elif idx in colors['yellow']:
-                            make_wins(YELLOW, row, idx, letter)
-                        else:
-                            make_wins(GREY, row, idx, letter)
-                    row += 1
+                    elif idx in colors['yellow']:
+                        make_wins(YELLOW, row, idx, letter)
+                    else:
+                        make_wins(GREY, row, idx, letter)
+                row += 1
+                assign_colors_to_keyboard(guess, colors, GREEN, YELLOW, GREY)
             else:
                 is_bad_word = True
                 bad_word = guess
