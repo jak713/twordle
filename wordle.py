@@ -21,7 +21,7 @@ def is_matching(wordle, guess)-> dict:
     matched = {
         'green': [],
         'yellow': [],
-        'grey': [],
+        'dark': [],
     }
     letters_used = {} # to avoid double counting but also to allow for mulitple letters when appropriate
 
@@ -34,7 +34,7 @@ def is_matching(wordle, guess)-> dict:
                 matched['yellow'].append(idx)
                 letters_used[letter] = letters_used.get(letter, 0) + 1
         else:
-            matched['grey'].append(idx)
+            matched['dark'].append(idx)
     return matched
 
 def is_correct(wordle, guess) -> bool:
@@ -106,11 +106,11 @@ def main(stdscr):
     for j in range(6):
         for i in range(5):
             win = curses.newwin(3, 5, 5+j*3, 30+i*5)
-            win.attrset(DARK)
+            win.attrset(GREY)
             win.border()
             win.refresh()
 
-    make_keyboard(DARK)
+    make_keyboard(GREY)
 
     row = 0
     is_bad_word = False
@@ -140,7 +140,7 @@ def main(stdscr):
                 if column > 0:
                     column-=1
                     guess = guess[:-1]
-                    make_wins(DARK, row, column, " ")
+                    make_wins(GREY, row, column, " ")
                 continue
 
             while not letter.isalpha():
@@ -148,7 +148,7 @@ def main(stdscr):
 
             if column < 5 and len(guess) < 5:
                 guess+=str(letter).lower()
-                make_wins(DARK, row, column, letter.upper())
+                make_wins(GREY, row, column, letter.upper())
                 column+=1
 
         if is_correct(wordle,guess):
@@ -167,9 +167,9 @@ def main(stdscr):
                     elif idx in colors['yellow']:
                         make_wins(YELLOW, row, idx, letter)
                     else:
-                        make_wins(GREY, row, idx, letter)
+                        make_wins(DARK, row, idx, letter)
                 row += 1
-                assign_colors_to_keyboard(guess, colors, GREEN, YELLOW, GREY)
+                assign_colors_to_keyboard(guess, colors, GREEN, YELLOW, DARK)
             else:
                 is_bad_word = True
                 bad_word = guess
