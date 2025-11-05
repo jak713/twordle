@@ -25,11 +25,13 @@ def is_matching(wordle, guess)-> dict:
     }
 
     wordle_used = [False] * len(wordle)
+    # green
     for idx,letter in enumerate(guess):
         if letter == wordle[idx]:
             matched['green'].append(idx)
             wordle_used[idx] = True
     
+    # yellow
     for idx, letter in enumerate(guess):
         if idx in matched['green']:
             continue
@@ -93,7 +95,6 @@ def assign_colors_to_keyboard(guess, colors, GREEN, YELLOW, GREY):
         win.refresh()
 
 def main(stdscr):
-
     curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
     curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)
     curses.init_pair(3, 255, curses.COLOR_BLACK)
@@ -188,9 +189,14 @@ def main(stdscr):
             continue
 
     stdscr.addstr(23,32,"The wordle was: " + wordle, GREY | curses.A_BLINK)
-    stdscr.addstr(0,32,"Press any key to exit", GREY)
+    stdscr.addstr(2,23,"Press any key to exit, or p to play again", GREY)
 
     stdscr.refresh()
-    stdscr.getch()
+    last_key = stdscr.getch()
+
+    if last_key == ord('p'):
+        return wrapper(main)
+    else:
+        return
 
 wrapper(main)
