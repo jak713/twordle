@@ -142,6 +142,10 @@ def main(stdscr):
                 is_short_word = False
 
             letter = stdscr.getkey()
+
+            if letter == '\x1b' or ord(letter) == 27: # Escape button/sequence to quit the app
+                return
+
             if letter in (curses.KEY_ENTER, 10, 13, '\n'):
                 break
 
