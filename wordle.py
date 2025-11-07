@@ -2,12 +2,100 @@ import random
 import curses
 from curses import wrapper
 import time
+import json
+import os
 
+stats_path = 'stats.json'
 keyboard = ['qwertyuiop','asdfghjkl','zxcvbnm']
 wordle_path = 'words.txt'
+
 valid_path = 'valid.txt'
 with open(valid_path, 'r') as f:
     valid_list = [l.strip() for l in f]
+
+def create_data_model():
+    data = {
+        '1':0,
+        '2':0,
+        '3':0,
+        '4':0,
+        '5':0,
+        '6':0,
+        'X':0,
+    }
+    return data
+
+def add_data_to_json(row):
+    if os.path.exists(stats_path):
+        pass
+    else:
+        stats = create_data_model()
+        with open(stats_path, 'w') as file:
+            json.dump(stats,file)
+    try:
+        with open(stats_path, 'r+') as file:
+            stats = json.load(file)
+            if row != 'X':
+                stats[str(row)] += 1
+            else:
+                stats[row] += 1
+            file.seek(0)
+            json.dump(stats, file, indent=4)
+            file.truncate()
+    except Exception as e:
+        return e
+
+def show_json_data(stdscr):
+    curses.init_pair(99, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    BCKGRND = curses.color_pair(99)
+
+    with open(stats_path, 'r') as file:
+        stats = json.load(file)
+        heights = [value for value in stats.values()]
+    
+    # back window
+    # params are tile_h, tile_w, start_y, start_x
+    bckgrnd = curses.newwin(21, 51, 4, 19)
+    bckgrnd.bkgd(' ', BCKGRND)
+    
+    # add labels for x axis
+    max_y, max_x = bckgrnd.getmaxyx()
+    for i in range(7):
+        x_pos = 4 + i*7
+        y_pos = max_y - 2
+        label = 'X' if i == 6 else str(i+1)
+        # out of bounds produces error:
+        if 0 <= y_pos < max_y and 0 <= x_pos <= max_x - len(label):
+            try:
+                bckgrnd.addstr(y_pos, x_pos, label, BCKGRND)
+            except curses.error:
+                pass
+        
+    bckgrnd.border()
+    bckgrnd.refresh()
+    make_chart(heights)
+
+    stdscr.addstr(25,20,"Press 'q' to exit or any other key to play again!", BCKGRND)
+    stdscr.refresh()
+    key = stdscr.getch()
+    if key == ord('q'):
+        return False
+    else:
+        return True
+
+def make_chart(heights):
+    RECT = curses.color_pair(99)
+    max_height = 18 # for normalisation
+    # params are tile_h, tile_w, start_y, start_x
+    for i, height in enumerate(heights):
+        norm_height = int((height / max(heights)) * max_height) if max(heights) > 0 else 0
+        for h in range(norm_height):
+            # at the minute hardcoded, but need improvement
+            win = curses.newwin(1, 5, 22 - h, 21 + i*7)
+            win.bkgd(' ', RECT)
+            win.border()
+            win.refresh()
+            time.sleep(0.05)
 
 def get_wordle(wordle_path) -> str:
     with open(wordle_path, 'r') as file:
@@ -107,7 +195,7 @@ def main(stdscr):
 
     curses.curs_set(False) 
     stdscr.clear()
-    stdscr.addstr(3,25,"Welcome to Twordle (Terminal Wordle 2)", GREY | curses.A_UNDERLINE)
+    stdscr.addstr(3,25,"Welcome to Twordle (<Terminal> Wordle 2)", GREY | curses.A_UNDERLINE)
     stdscr.refresh()
 
     wordle = get_wordle(wordle_path)
@@ -143,7 +231,7 @@ def main(stdscr):
 
             letter = stdscr.getkey()
 
-            if letter == '\x1b' or ord(letter) == 27: # Escape button/sequence to quit the app
+            if letter == '\x1b': # Escape button/sequence to quit the app
                 return
 
             if letter in (curses.KEY_ENTER, 10, 13, '\n'):
@@ -167,6 +255,8 @@ def main(stdscr):
         if is_correct(wordle,guess):
             for idx, letter in enumerate(guess):
                 make_wins(GREEN, row, idx, letter)
+            # dump to stats if win
+            add_data_to_json(row+1)
             break
 
         if len(guess) == 5:
@@ -192,14 +282,22 @@ def main(stdscr):
             short_word = guess
             continue
 
+    if row == 6:
+        add_data_to_json('X')
+
     stdscr.addstr(23,32,"The wordle was: " + wordle, GREY | curses.A_BLINK)
-    stdscr.addstr(2,23,"Press any key to exit, or p to play again", GREY)
+    stdscr.addstr(2,12,"Press any key to exit or 'p' to play again and 's' to view stats", GREY)
 
     stdscr.refresh()
     last_key = stdscr.getch()
 
     if last_key == ord('p'):
         return wrapper(main)
+    elif last_key == ord('s'):
+        if show_json_data(stdscr):
+            return wrapper(main)
+        else:
+            return
     else:
         return
 
