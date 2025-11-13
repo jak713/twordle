@@ -1,3 +1,3 @@
 ## TERMINAL WORDLE 2
 
-![turdle](turdle.png)
+![turdle gif](twordle-screencast.gif)
