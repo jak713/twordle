@@ -1,9 +1,14 @@
+import os
+import sys
+
+os.environ['TERM'] = 'xterm-256color'
+
 import random
 import curses
 from curses import wrapper
 import time
 import json
-import os
+
 
 stats_path = 'stats.json'
 keyboard = ['qwertyuiop','asdfghjkl','zxcvbnm']
@@ -237,15 +242,15 @@ def main(stdscr):
             if letter in (curses.KEY_ENTER, 10, 13, '\n'):
                 break
 
-            if letter in (curses.KEY_BACKSPACE, 127, '\b', '\x7f'):
+            if letter in (curses.KEY_BACKSPACE, 127, '\b', '\x7f', curses.KEY_DL, 8, '\x08', "^H", "^?"):
                 if column > 0:
                     column-=1
                     guess = guess[:-1]
                     make_wins(GREY, row, column, " ")
                 continue
 
-            while not letter.isalpha():
-                letter = stdscr.getkey()
+            if not letter.isalpha() or len(letter) > 1:
+                continue
 
             if column < 5 and len(guess) < 5:
                 guess+=str(letter).lower()
